@@ -1,0 +1,7 @@
+*~
+*.o
+tmp*
+ticc
+.idea
+.vscode
+cmake-build-debug
