@@ -4,36 +4,11 @@
 #include <stdarg.h>
 #include <string.h>
 
+#include "ticc.h"
 
-enum {
-    TK_NUM = 256,
-    TK_EOF,
-};
-
-enum {
-    ND_NUM = 256,
-};
-
-typedef struct {
-    int ty;
-    int val;
-    char *input;
-} Token;
-
-typedef struct {
-    int ty;
-    struct Node *lhs;
-    struct Node *rhs;
-    int val;
-} Node;
 
 Token tokens[100];
 int pos = 0;
-
-Node* term();
-Node* mul();
-Node* add();
-void gen();
 
 void error(char *fmt, ...) {
     va_list ap;
