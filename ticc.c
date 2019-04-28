@@ -8,7 +8,7 @@
 
 // globals
 
-TokenVector *tokens;
+Vector *tokens;
 Node *code[100];
 int pos = 0;
 
@@ -26,24 +26,23 @@ void error(char *fmt, ...) {
     exit(1);
 }
 
-
-// // tokenize utils
-
-TokenVector* new_tvector() {
-    TokenVector *vec = malloc(sizeof(TokenVector));
+Vector* new_vector() {
+    Vector *vec = malloc(sizeof(Vector));
     vec->capacity = 16;
     vec->len = 0;
-    vec->data = malloc(sizeof(Token*) * vec->capacity);
-    return vec;
+    vec->data = malloc(sizeof(void*) * vec->capacity);
 }
 
-void push_tvector(TokenVector *vec, Token *token) {
+void push_vector(Vector *vec, void *elm) {
     if(vec->len == vec->capacity) {
         vec->capacity *= 2;
-        vec->data = realloc(vec->data, sizeof(Token*) * vec->capacity);
+        vec->data = realloc(vec->data, sizeof(void*) * vec->capacity);
     }
-    vec->data[vec->len++] = token;
+    vec->data[vec->len++] = elm;
 }
+
+
+// // tokenize utils
 
 int is_alnum(char c) {
     return  ('a' <= c && c <= 'z') ||
@@ -78,7 +77,7 @@ Node* new_node_ident(char name) {
 }
 
 int consume(int ty) {
-    if(tokens->data[pos]->ty != ty) {
+    if(((Token*)(tokens->data[pos]))->ty != ty) {
         return 0;
     }
     pos++;
@@ -89,7 +88,7 @@ int consume(int ty) {
 // tokenize
 
 void tokenize(char *p) {
-    tokens = new_tvector();
+    tokens = new_vector();
     Token *token;
     while(*p) {
         if(isspace(*p)) {
@@ -102,7 +101,7 @@ void tokenize(char *p) {
         if(*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
             token->ty = *p;
             token->input = p;
-            push_tvector(tokens, token);
+            push_vector(tokens, token);
             p++;
             continue;
         }
@@ -110,7 +109,7 @@ void tokenize(char *p) {
         if(strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
             token->ty = TK_RETURN;
             token->input =p;
-            push_tvector(tokens, token);
+            push_vector(tokens, token);
             p += 6;
             continue;
         }
@@ -118,7 +117,7 @@ void tokenize(char *p) {
         if('a' <= *p && *p <= 'z') {
             token->ty = TK_IDENT;
             token->input = p;
-            push_tvector(tokens, token);
+            push_vector(tokens, token);
             p++;
             continue;
         }
@@ -127,7 +126,7 @@ void tokenize(char *p) {
             token->ty = TK_NUM;
             token->input = p;
             token->val = strtol(p, &p, 10);
-            push_tvector(tokens, token);
+            push_vector(tokens, token);
             continue;
         }
 
@@ -138,7 +137,7 @@ void tokenize(char *p) {
     token = malloc(sizeof(Token));
     token->ty = TK_EOF;
     token->input = p;
-    push_tvector(tokens, token);
+    push_vector(tokens, token);
 }
 
 
@@ -146,7 +145,7 @@ void tokenize(char *p) {
 
 void program() {
     int i = 0;
-    while(tokens->data[pos]->ty != TK_EOF) {
+    while(((Token*)(tokens->data[pos]))->ty != TK_EOF) {
         code[i++] = stmt();
     }
     Node *eof = malloc(sizeof(Node));
@@ -166,7 +165,7 @@ Node* stmt() {
     }
     
     if(!consume(';')) {
-        error("';'ではないトークンです: %s", tokens->data[pos]->input);
+        error("';'ではないトークンです: %s", ((Token*)(tokens->data[pos]))->input);
     }
     return node;
 }
@@ -214,20 +213,20 @@ Node* term() {
     if(consume('(')) {
         Node *node = add();
         if(!consume(')')) {
-            error("(に対応する)がありません: %s", tokens->data[pos]->input);
+            error("(に対応する)がありません: %s", ((Token*)(tokens->data[pos]))->input);
         }
         return node;
     }
 
-    if(tokens->data[pos]->ty == TK_NUM) {
-        return new_node_num(tokens->data[pos++]->val);
+    if(((Token*)(tokens->data[pos]))->ty == TK_NUM) {
+        return new_node_num(((Token*)(tokens->data[pos++]))->val);
     }
 
-    if(tokens->data[pos]->ty == TK_IDENT) {
-        return new_node_ident(*(tokens->data[pos++]->input));
+    if(((Token*)(tokens->data[pos]))->ty == TK_IDENT) {
+        return new_node_ident(*(((Token*)(tokens->data[pos++]))->input));
     }
 
-    error("(でも)でもないトークンです: %s", tokens->data[pos]->input);
+    error("(でも)でもないトークンです: %s", ((Token*)(tokens->data[pos]))->input);
 }
 
 

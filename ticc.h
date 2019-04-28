@@ -13,13 +13,13 @@ enum {              // Node type
     ND_EOF,
 };
 
-typedef struct Token{
+typedef struct Token {
     int ty;             // type
     int val;            // TK_NUMの時のみ
     char *input;        // TK_IDENTの時(変数名), 入力の位置(デバッグ用)
 } Token;
 
-typedef struct Node{
+typedef struct Node {
     int ty;             // type
     struct Node *lhs;   // 左辺
     struct Node *rhs;   // 右辺
@@ -27,18 +27,18 @@ typedef struct Node{
     char name;          // ND_IDENTの時のみ
 } Node;
 
-typedef struct TokenVector{ // token可変配列
-    Token **data;
+typedef struct Vector {
+    void **data;
     int len;                // 要素の数
     int capacity;           // dataの長さ(容量)
-} TokenVector;
+} Vector;
 
 void error(char *fmt, ...);
 Node* new_node(int ty, Node *lhs, Node *rhs);
 Node* new_node_num(int val);
 Node* new_node_ident(char name);
-TokenVector* new_tvector();
-void push_tvector(TokenVector *vec, Token *token);
+Vector* new_vector();
+void push_vector(Vector *vec, void *elm);
 int consume(int ty);
 void tokenize(char *p);
 Node* add();
