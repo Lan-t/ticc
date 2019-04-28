@@ -27,5 +27,6 @@ try 72 "a = 9; b = 8; a * b;"
 try 7 "3; return 7; 2;"
 try 72 "kisaragi = 70; chihaya = 2; return kisaragi + chihaya; 102;"
 try 72 "foo();"
+try 72 "baa(70, 2);"
 
 echo OK

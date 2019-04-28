@@ -18,7 +18,7 @@ mul     :   term
 term    :   <num>
         |   <ident>
         |   "(" assign ")"
-        |   <ident> "(" ")"
+        |   <ident> "(" (assign ",")* assign? ")"
 
 
 <num>   :   stdlib.h: strtol();

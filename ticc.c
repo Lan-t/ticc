@@ -6,6 +6,8 @@
 
 #include "ticc.h"
 
+const char *ARG_REGISTER[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
 // globals
 
 Vector *tokens;
@@ -129,10 +131,12 @@ Node* new_node_ident(char *name) {
     return node;
 }
 
-Node* new_node_call(char *name) {
+Node* new_node_call(char *name, Node **args, int argc) {
     Node *node = malloc(sizeof(Node));
     node->ty = ND_CALL;
     node->name = name;
+    node->args = args;
+    node->val = argc;
     return node;
 }
 
@@ -158,7 +162,7 @@ void tokenize(char *p) {
 
         token = malloc(sizeof(Token));
 
-        if(*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == ';') {
+        if(*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')' || *p == '=' || *p == ';' || *p == ',') {
             token->ty = *p;
             token->input = p;
             push_vector(tokens, token);
@@ -289,11 +293,14 @@ Node* term() {
     if(((Token*)(tokens->data[pos]))->ty == TK_IDENT) {
         char *name = ((Token*)(tokens->data[pos++]))->name;
         if(consume('(')) {
-            Node *node = new_node_call(name);
-            if(!consume(')')) {
-                error("'('に対応する')'がありません: %s", ((Token*)(tokens->data[pos]))->input);
+            int i = 0;
+            Node **args = malloc(sizeof(Node**));
+            while(1) {
+                if((!consume(',')) && consume(')')) {
+                    return new_node_call(name, args, i);
+                }
+                args[i++] = assign();
             }
-            return node;
         }
         return new_node_ident(name);
     }
@@ -338,6 +345,14 @@ void gen(Node *node) {
     }
 
     if(node->ty == ND_CALL) {
+        
+        for(int i=node->val-1; i >= 0; i--) {
+            gen(node->args[i]);
+        }
+        for(int i=0; i < node->val && i < 6; i++) {
+            printf("  pop rax\n");
+            printf("  mov %s, rax\n", ARG_REGISTER[i]);
+        }
         printf("  call %s\n", node->name);
         printf("  push rax\n");
         return;

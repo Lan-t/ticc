@@ -25,8 +25,9 @@ typedef struct Node {
     int ty;             // type
     struct Node *lhs;   // 左辺
     struct Node *rhs;   // 右辺
-    int val;            // ND_NUMの時のみ
-    char *name;          // ND_IDENT, ND_CALLの時のみ
+    int val;            // ND_NUMの時のみ, ND_CALLの際:引数ノードの数
+    char *name;         // ND_IDENT, ND_CALLの時のみ
+    struct Node **args; // ND_CALLの時のみ
 } Node;
 
 typedef struct Vector {
