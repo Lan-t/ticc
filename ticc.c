@@ -6,8 +6,7 @@
 
 #include "ticc.h"
 
-
-Token tokens[100];
+TokenVector *tokens;
 int pos = 0;
 
 void error(char *fmt, ...) {
@@ -33,35 +32,55 @@ Node *new_node_num(int val) {
     return node;
 }
 
+TokenVector* new_tvector() {
+    TokenVector *vec = malloc(sizeof(TokenVector));
+    vec->capacity = 16;
+    vec->len = 0;
+    vec->data = malloc(sizeof(Token*) * vec->capacity);
+    return vec;
+}
+
+void push_tvector(TokenVector *vec, Token *token) {
+    if(vec->len == vec->capacity) {
+        vec->capacity *= 2;
+        vec->data = realloc(vec->data, sizeof(Token*) * vec->capacity);
+    }
+    vec->data[vec->len++] = token;
+}
+
 int consume(int ty) {
-    if(tokens[pos].ty != ty) {
+    if(tokens->data[pos]->ty != ty) {
         return 0;
     }
     pos++;
     return 1;
 }
 
+
 void tokenize(char *p) {
-    int i = 0;
+    tokens = new_tvector();
+    Token *token;
     while(*p) {
         if(isspace(*p)) {
             p++;
             continue;
         }
 
+        token = malloc(sizeof(Token));
+
         if(*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
-            tokens[i].ty = *p;
-            tokens[i].input = p;
-            i++;
+            token->ty = *p;
+            token->input = p;
+            push_tvector(tokens, token);
             p++;
             continue;
         }
 
         if(isdigit(*p)) {
-            tokens[i].ty = TK_NUM;
-            tokens[i].input = p;
-            tokens[i].val = strtol(p, &p, 10);
-            i++;
+            token->ty = TK_NUM;
+            token->input = p;
+            token->val = strtol(p, &p, 10);
+            push_tvector(tokens, token);
             continue;
         }
 
@@ -69,8 +88,10 @@ void tokenize(char *p) {
         exit(1);
     }
 
-    tokens[i].ty = TK_EOF;
-    tokens[i].input = p;
+    token = malloc(sizeof(Token));
+    token->ty = TK_EOF;
+    token->input = p;
+    push_tvector(tokens, token);
 }
 
 Node* add() {
@@ -105,16 +126,17 @@ Node *term() {
     if(consume('(')) {
         Node *node = add();
         if(!consume(')')) {
-            error("(に対応する)がありません: %s", tokens[pos].input);
+            error("(に対応する)がありません: %s", tokens->data[pos]->input);
         }
         return node;
     }
 
-    if(tokens[pos].ty == TK_NUM) {
-        return new_node_num(tokens[pos++].val);
+    if(tokens->data[pos]->ty == TK_NUM) {
+        return new_node_num(tokens->data[pos++]->val);
+        printf("a");
     }
 
-    error("(でも)でもないトークンです: %s", tokens[pos].input);
+    error("(でも)でもないトークンです: %s", tokens->data[pos]->input);
 }
 
 void gen(Node *node) {
@@ -145,7 +167,7 @@ void gen(Node *node) {
             break;
     }
 
-    printf("push rax\n");
+    printf("  push rax\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -156,6 +178,7 @@ int main(int argc, char *argv[]) {
 
     tokenize(argv[1]);
     Node *node = add();
+
 
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
