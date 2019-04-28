@@ -1,34 +1,34 @@
 
-enum {
+enum {              // Token type
     TK_NUM = 256,
     TK_IDENT,
     TK_EOF,
 };
 
-enum {
+enum {              // Node type
     ND_NUM = 256,
     ND_IDENT,
     ND_EOF,
 };
 
 typedef struct Token{
-    int ty;
-    int val;
-    char *input;
+    int ty;             // type
+    int val;            // TK_NUMの時のみ
+    char *input;        // TK_IDENTの時(変数名), 入力の位置(デバッグ用)
 } Token;
 
 typedef struct Node{
-    int ty;
-    struct Node *lhs;
-    struct Node *rhs;
-    int val;
-    char name;
+    int ty;             // type
+    struct Node *lhs;   // 左辺
+    struct Node *rhs;   // 右辺
+    int val;            // ND_NUMの時のみ
+    char name;          // ND_IDENTの時のみ
 } Node;
 
-typedef struct {
+typedef struct TokenVector{ // token可変配列
     Token **data;
-    int len;
-    int capacity;
+    int len;                // 要素の数
+    int capacity;           // dataの長さ(容量)
 } TokenVector;
 
 void error(char *fmt, ...);

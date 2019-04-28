@@ -6,17 +6,47 @@
 
 #include "ticc.h"
 
+// globals
+
 TokenVector *tokens;
 Node *code[100];
 int pos = 0;
 
+
+// utils
+
+// // general utils
+
 void error(char *fmt, ...) {
+    /* エラー出力 (printf format, auto newline) */
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     exit(1);
 }
+
+
+// // tokenize utils
+
+TokenVector* new_tvector() {
+    TokenVector *vec = malloc(sizeof(TokenVector));
+    vec->capacity = 16;
+    vec->len = 0;
+    vec->data = malloc(sizeof(Token*) * vec->capacity);
+    return vec;
+}
+
+void push_tvector(TokenVector *vec, Token *token) {
+    if(vec->len == vec->capacity) {
+        vec->capacity *= 2;
+        vec->data = realloc(vec->data, sizeof(Token*) * vec->capacity);
+    }
+    vec->data[vec->len++] = token;
+}
+
+
+// // AST genelator utils
 
 Node* new_node(int ty, Node *lhs, Node *rhs) {
     Node *node = malloc(sizeof(Node));
@@ -40,22 +70,6 @@ Node* new_node_ident(char name) {
     return node;
 }
 
-TokenVector* new_tvector() {
-    TokenVector *vec = malloc(sizeof(TokenVector));
-    vec->capacity = 16;
-    vec->len = 0;
-    vec->data = malloc(sizeof(Token*) * vec->capacity);
-    return vec;
-}
-
-void push_tvector(TokenVector *vec, Token *token) {
-    if(vec->len == vec->capacity) {
-        vec->capacity *= 2;
-        vec->data = realloc(vec->data, sizeof(Token*) * vec->capacity);
-    }
-    vec->data[vec->len++] = token;
-}
-
 int consume(int ty) {
     if(tokens->data[pos]->ty != ty) {
         return 0;
@@ -64,6 +78,8 @@ int consume(int ty) {
     return 1;
 }
 
+
+// tokenize
 
 void tokenize(char *p) {
     tokens = new_tvector();
@@ -110,15 +126,17 @@ void tokenize(char *p) {
     push_tvector(tokens, token);
 }
 
-Node* assign() {
-    Node *node = add();
-    while(1) {
-        if(consume('=')) {
-            node = new_node('=', node, assign());
-        } else {
-            return node;
-        }
+
+// AST nodes genelate
+
+void program() {
+    int i = 0;
+    while(tokens->data[pos]->ty != TK_EOF) {
+        code[i++] = stmt();
     }
+    Node *eof = malloc(sizeof(Node));
+    eof->ty = ND_EOF;
+    code[i] = eof;
 }
 
 Node* stmt() {
@@ -130,14 +148,15 @@ Node* stmt() {
     return node;
 }
 
-void program() {
-    int i = 0;
-    while(tokens->data[pos]->ty != TK_EOF) {
-        code[i++] = stmt();
+Node* assign() {
+    Node *node = add();
+    while(1) {
+        if(consume('=')) {
+            node = new_node('=', node, assign());
+        } else {
+            return node;
+        }
     }
-    Node *eof = malloc(sizeof(Node));
-    eof->ty = ND_EOF;
-    code[i] = eof;
 }
 
 Node* add() {
@@ -187,6 +206,9 @@ Node* term() {
 
     error("(でも)でもないトークンです: %s", tokens->data[pos]->input);
 }
+
+
+// assembry code generator
 
 void gen_lval(Node *node) {
     if(node->ty != ND_IDENT) {
@@ -247,6 +269,9 @@ void gen(Node *node) {
 
     printf("  push rax\n");
 }
+
+
+// main
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {

@@ -1,0 +1,23 @@
+program :   program stmt
+        |   ε
+
+stmt    :   assign ";"
+
+assign  :   add
+        |   add "=" assign
+
+add     :   mul
+        |   add "+" mul
+        |   add "-" mul
+
+mul     :   term
+        |   mul "*" term
+        |   mul "/" term
+
+term    :   <num>
+        |   <ident>
+        |   "(" assign ")"
+
+
+<num>   :   stdlib.h: strtol();
+<ident> :   'a' <= c <= 'z';
