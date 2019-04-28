@@ -23,5 +23,6 @@ try 32 "4 * (4 + 4 );"
 try 7 "a = 7; a;"
 try 72 "a = 9; b = 8; a * b;"
 try 7 "3; return 7; 2;"
+try 72 "kisaragi = 70; chihaya = 2; return kisaragi + chihaya; 102;"
 
 echo OK

@@ -11,6 +11,8 @@
 Vector *tokens;
 Node *code[100];
 int pos = 0;
+int local_rots = 0;
+Map *locals;
 
 
 // utils
@@ -41,14 +43,59 @@ void push_vector(Vector *vec, void *elm) {
     vec->data[vec->len++] = elm;
 }
 
+Map* new_map() {
+    Map *map = malloc(sizeof(Map));
+    map->keys = new_vector();
+    map->vals = new_vector();
+    return map;
+}
+
+void map_set(Map *map, char *key, void *val) {
+    push_vector(map->keys, key);
+    push_vector(map->vals, val);
+}
+
+void* map_get(Map *map, char *key) {
+    for(int i=map->keys->len-1; i >= 0; i--) {
+        if(strcmp(map->keys->data[i], key) == 0) {
+            return map->vals->data[i];
+        }
+    }
+    return NULL;
+}
+
 
 // // tokenize utils
 
 int is_alnum(char c) {
     return  ('a' <= c && c <= 'z') ||
             ('A' <= c && c <= 'Z') ||
-            ('0' <= c && '9' <= c) ||
+            ('0' <= c && c <= '9') ||
             (c == '_');
+}
+
+int is_al(char c) {
+    return  ('a' <= c && c <= 'z') ||
+            ('A' <= c && c <= 'Z') ||
+            (c == '_');
+}
+
+int ident_len(char* p) {
+    if(!is_al(*(p++))) {
+        return 0;
+    }
+    int len = 1;
+    while(is_alnum(*(p++))) {
+        len++;
+    }
+    return len;
+}
+
+char* substr(char* p, int start, int len) {
+    char* sstr = malloc(sizeof(char) * (len + 1));
+    strncpy(sstr, p+start, len);
+    sstr[len] = '\0';
+    return sstr;
 }
 
 
@@ -69,10 +116,16 @@ Node* new_node_num(int val) {
     return node;
 }
 
-Node* new_node_ident(char name) {
+Node* new_node_ident(char *name) {
     Node *node = malloc(sizeof(Node));
     node->ty = ND_IDENT;
     node->name = name;
+    if(map_get(locals, name) == 0) {
+        int *offset = (int*)malloc(sizeof(int));
+        *offset = ++local_rots * 8;
+
+        map_set(locals, name, offset);
+    }
     return node;
 }
 
@@ -114,13 +167,17 @@ void tokenize(char *p) {
             continue;
         }
 
-        if('a' <= *p && *p <= 'z') {
-            token->ty = TK_IDENT;
-            token->input = p;
-            push_vector(tokens, token);
-            p++;
-            continue;
-        }
+
+       int len;
+       if((len = ident_len(p)) != 0) {
+           token->ty = TK_IDENT;
+           token->name = substr(p, 0, len);
+           token->input = p;
+           p += len;
+           push_vector(tokens, token);
+           continue;
+       }
+       
 
         if(isdigit(*p)) {
             token->ty = TK_NUM;
@@ -223,7 +280,7 @@ Node* term() {
     }
 
     if(((Token*)(tokens->data[pos]))->ty == TK_IDENT) {
-        return new_node_ident(*(((Token*)(tokens->data[pos++]))->input));
+        return new_node_ident(((Token*)(tokens->data[pos++]))->name);
     }
 
     error("(でも)でもないトークンです: %s", ((Token*)(tokens->data[pos]))->input);
@@ -236,8 +293,7 @@ void gen_lval(Node *node) {
     if(node->ty != ND_IDENT) {
         error("代入の左辺値が変数ではありません");
     }
-
-    int offset = ('z' - node->name + 1) * 8;
+    int offset = *(int*)map_get(locals, node->name);
     printf("  mov rax, rbp\n");
     printf("  sub rax, %d\n", offset);
     printf("  push rax\n");
@@ -310,7 +366,21 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if(strcmp(argv[1], "--test") == 0) {
+        char    *code1 = "nospace",
+                *code2 = "id3nt end",
+                *code3 = "1d3nt end";
+        printf("input: \"%s\" -> %s\n", code1, substr(code1, 1, 3));
+        printf("input: \"%s\" -> %s\n", code2, substr(code2, 0, ident_len(code2)));
+        printf("input: \"%s\" -> %s\n", code3, substr(code3, 0, ident_len(code3)));
+
+        printf("\n-------------\n");
+
+        return 0;
+    }
+
     tokenize(argv[1]);
+    locals = new_map();
     program();
     
     printf(".intel_syntax noprefix\n");
@@ -319,7 +389,7 @@ int main(int argc, char *argv[]) {
 
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
-    printf("  sub rsp, 208\n");
+    printf("  sub rsp, %d\n", local_rots * 8);
 
     for(int i=0; code[i]->ty != ND_EOF; i++) {
         gen(code[i]);
