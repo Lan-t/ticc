@@ -5,3 +5,4 @@ ticc
 .idea
 .vscode
 cmake-build-debug
+CMakeLists.txt
