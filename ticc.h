@@ -2,12 +2,14 @@
 enum {              // Token type
     TK_NUM = 256,
     TK_IDENT,
+    TK_RETURN,
     TK_EOF,
 };
 
 enum {              // Node type
     ND_NUM = 256,
     ND_IDENT,
+    ND_RETURN,
     ND_EOF,
 };
 

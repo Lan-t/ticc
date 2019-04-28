@@ -2,6 +2,7 @@ program :   program stmt
         |   ε
 
 stmt    :   assign ";"
+        :   "return" assign ";"
 
 assign  :   add
         |   add "=" assign
