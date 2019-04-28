@@ -18,7 +18,8 @@ mul     :   term
 term    :   <num>
         |   <ident>
         |   "(" assign ")"
+        |   <ident> "(" ")"
 
 
 <num>   :   stdlib.h: strtol();
-<ident> :   'a' <= c <= 'z';
+<ident> :   [a-zA-z_][a-zA-Z_0-9]*;

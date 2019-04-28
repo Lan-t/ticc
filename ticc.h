@@ -9,6 +9,7 @@ enum {              // Token type
 enum {              // Node type
     ND_NUM = 256,
     ND_IDENT,
+    ND_CALL,
     ND_RETURN,
     ND_EOF,
 };
@@ -25,7 +26,7 @@ typedef struct Node {
     struct Node *lhs;   // 左辺
     struct Node *rhs;   // 右辺
     int val;            // ND_NUMの時のみ
-    char *name;          // ND_IDENTの時のみ
+    char *name;          // ND_IDENT, ND_CALLの時のみ
 } Node;
 
 typedef struct Vector {

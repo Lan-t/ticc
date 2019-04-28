@@ -4,4 +4,4 @@ test: ticc
 	./test.sh
 
 clean:
-	rm -r ticc *.o *~ tmp* 
+	rm -r ticc foo *.o *~ tmp* 

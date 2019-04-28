@@ -129,6 +129,13 @@ Node* new_node_ident(char *name) {
     return node;
 }
 
+Node* new_node_call(char *name) {
+    Node *node = malloc(sizeof(Node));
+    node->ty = ND_CALL;
+    node->name = name;
+    return node;
+}
+
 int consume(int ty) {
     if(((Token*)(tokens->data[pos]))->ty != ty) {
         return 0;
@@ -280,7 +287,15 @@ Node* term() {
     }
 
     if(((Token*)(tokens->data[pos]))->ty == TK_IDENT) {
-        return new_node_ident(((Token*)(tokens->data[pos++]))->name);
+        char *name = ((Token*)(tokens->data[pos++]))->name;
+        if(consume('(')) {
+            Node *node = new_node_call(name);
+            if(!consume(')')) {
+                error("'('に対応する')'がありません: %s", ((Token*)(tokens->data[pos]))->input);
+            }
+            return node;
+        }
+        return new_node_ident(name);
     }
 
     error("(でも)でもないトークンです: %s", ((Token*)(tokens->data[pos]))->input);
@@ -318,6 +333,12 @@ void gen(Node *node) {
         gen_lval(node);
         printf("  pop rax\n");
         printf("  mov rax, [rax]\n");
+        printf("  push rax\n");
+        return;
+    }
+
+    if(node->ty == ND_CALL) {
+        printf("  call %s\n", node->name);
         printf("  push rax\n");
         return;
     }
